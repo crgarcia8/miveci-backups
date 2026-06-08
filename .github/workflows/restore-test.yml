@@ -11,6 +11,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Clean database
+        run: |
+          docker run --rm \
+            -e PGPASSWORD="${{ secrets.TEST_DB_PASSWORD }}" \
+            postgres:17 \
+            psql "$DATABASE_URL" \
+            -c "drop schema public cascade; create schema public;"
+
       - name: Restore backup
         env:
           DATABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
