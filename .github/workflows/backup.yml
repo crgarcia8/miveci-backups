@@ -1,18 +1,39 @@
-name: Debug pg_dump
+name: Backup Supabase
 
 on:
   workflow_dispatch:
 
 jobs:
-  debug:
+  backup:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check pg_dump
-        run: |
-          which pg_dump
-          pg_dump --version
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Find all pg_dump binaries
+      - name: Create backup
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_URL }}
         run: |
-          find /usr -name pg_dump 2>/dev/null
+          mkdir -p backups
+
+          docker run --rm \
+            -e DATABASE_URL="$DATABASE_URL" \
+            -v ${{ github.workspace }}/backups:/backups \
+            postgres:17 \
+            sh -c 'pg_dump "$DATABASE_URL" -F c -f /backups/backup-$(date +%F).dump'
+
+      - name: Verify backup
+        run: |
+          ls -lh backups
+
+      - name: Commit backup
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add backups
+
+          git commit -m "Backup $(date +%F)" || echo "No changes"
+
+          git push
