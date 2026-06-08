@@ -1,0 +1,40 @@
+name: Backup Supabase
+
+on:
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL Client
+        run: |
+          sudo apt update
+          sudo apt install -y postgresql-client
+
+      - name: Create backup
+        env:
+          PGPASSWORD: ${{ secrets.SUPABASE_PASSWORD }}
+        run: |
+          mkdir backups
+
+          pg_dump \
+            -h ${{ secrets.SUPABASE_HOST }} \
+            -p ${{ secrets.SUPABASE_PORT }} \
+            -U ${{ secrets.SUPABASE_USER }} \
+            -d ${{ secrets.SUPABASE_DB }} \
+            > backups/backup-$(date +%Y-%m-%d).sql
+
+      - name: Commit backup
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add backups
+
+          git commit -m "Backup $(date +%Y-%m-%d)" || echo "No changes"
+
+          git push
