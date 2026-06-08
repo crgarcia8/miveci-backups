@@ -22,7 +22,12 @@ jobs:
             -e DATABASE_URL="$DATABASE_URL" \
             -v ${{ github.workspace }}/backups:/backups \
             postgres:17 \
-            sh -c 'pg_dump "$DATABASE_URL" -F c | gzip > /backups/backup-$(date +%F).dump.gz'
+            sh -c 'pg_dump "$DATABASE_URL" \
+              -F c \
+              --schema=public \
+              --no-owner \
+              --no-privileges \
+            | gzip > /backups/backup-$(date +%F).dump.gz'
 
       - name: Verify backup
         run: |
