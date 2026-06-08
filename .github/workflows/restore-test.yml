@@ -15,16 +15,18 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
         run: |
+          LATEST_BACKUP=$(ls backups/*.dump.gz | sort | tail -n 1)
+
           docker run --rm \
             -e DATABASE_URL="$DATABASE_URL" \
             -v ${{ github.workspace }}/backups:/backups \
             postgres:17 \
-            sh -c '
+            sh -c "
+              gunzip -c /backups/$(basename $LATEST_BACKUP) > /tmp/backup.dump
+
               pg_restore \
                 --verbose \
-                --clean \
-                --if-exists \
                 --no-owner \
-                --dbname="$DATABASE_URL" \
-                /backups/$(ls /backups | sort | tail -n 1)
-            '
+                --dbname=\"\$DATABASE_URL\" \
+                /tmp/backup.dump
+            "
