@@ -14,19 +14,37 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install PostgreSQL Client
+      - name: Install PostgreSQL 17 Client
         run: |
           sudo apt update
-          sudo apt install -y postgresql-client
+          sudo apt install -y wget gnupg
+
+          wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | \
+            gpg --dearmor | \
+            sudo tee /usr/share/keyrings/postgresql.gpg > /dev/null
+
+          echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" | \
+            sudo tee /etc/apt/sources.list.d/pgdg.list
+
+          sudo apt update
+          sudo apt install -y postgresql-client-17
+
+      - name: Verify pg_dump version
+        run: pg_dump --version
 
       - name: Create backup
         env:
-          DATABASE_URL: ${{ secrets.SUPABASE_URL }}
+          PGPASSWORD: ${{ secrets.SUPABASE_PASSWORD }}
         run: |
           mkdir -p backups
 
-          pg_dump "$DATABASE_URL" \
-            > backups/backup-$(date +%F).sql
+          pg_dump \
+            -h "${{ secrets.SUPABASE_HOST }}" \
+            -p "${{ secrets.SUPABASE_PORT }}" \
+            -U "${{ secrets.SUPABASE_USER }}" \
+            -d "${{ secrets.SUPABASE_DB }}" \
+            -F c \
+            -f backups/backup-$(date +%F).dump
 
       - name: Commit backup
         run: |
