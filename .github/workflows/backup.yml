@@ -2,7 +2,8 @@ name: Backup Supabase
 
 on:
   workflow_dispatch:
-
+  schedule:
+    - cron: '0 10 * * *'
 jobs:
   backup:
     runs-on: ubuntu-latest
@@ -21,7 +22,7 @@ jobs:
             -e DATABASE_URL="$DATABASE_URL" \
             -v ${{ github.workspace }}/backups:/backups \
             postgres:17 \
-            sh -c 'pg_dump "$DATABASE_URL" -F c -f /backups/backup-$(date +%F).dump'
+            sh -c 'pg_dump "$DATABASE_URL" -F c | gzip > /backups/backup-$(date +%F).dump.gz'
 
       - name: Verify backup
         run: |
