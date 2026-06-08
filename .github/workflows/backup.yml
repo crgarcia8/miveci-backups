@@ -3,9 +3,6 @@ name: Backup Supabase
 on:
   workflow_dispatch:
 
-  schedule:
-    - cron: '0 5 * * 1'
-
 jobs:
   backup:
     runs-on: ubuntu-latest
@@ -14,35 +11,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install PostgreSQL 17 Client
+      - name: Install PostgreSQL 17
         run: |
-          sudo apt update
-          sudo apt install -y wget gnupg
-
-          wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | \
-            gpg --dearmor | \
-            sudo tee /usr/share/keyrings/postgresql.gpg > /dev/null
-
-          echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" | \
-            sudo tee /etc/apt/sources.list.d/pgdg.list
-
           sudo apt update
           sudo apt install -y postgresql-client-17
 
-      - name: Verify pg_dump version
-        run: pg_dump --version
+      - name: Verify versions
+        run: |
+          which pg_dump
+          pg_dump --version
+          /usr/lib/postgresql/17/bin/pg_dump --version
 
       - name: Create backup
         env:
-          PGPASSWORD: ${{ secrets.SUPABASE_PASSWORD }}
+          DATABASE_URL: ${{ secrets.SUPABASE_URL }}
         run: |
           mkdir -p backups
 
-          pg_dump \
-            -h "${{ secrets.SUPABASE_HOST }}" \
-            -p "${{ secrets.SUPABASE_PORT }}" \
-            -U "${{ secrets.SUPABASE_USER }}" \
-            -d "${{ secrets.SUPABASE_DB }}" \
+          /usr/lib/postgresql/17/bin/pg_dump \
+            "$DATABASE_URL" \
             -F c \
             -f backups/backup-$(date +%F).dump
 
