@@ -3,12 +3,16 @@ name: Backup Supabase
 on:
   workflow_dispatch:
 
+  schedule:
+    - cron: '0 5 * * 1'
+
 jobs:
   backup:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Install PostgreSQL Client
         run: |
@@ -17,16 +21,12 @@ jobs:
 
       - name: Create backup
         env:
-          PGPASSWORD: ${{ secrets.SUPABASE_PASSWORD }}
+          DATABASE_URL: ${{ secrets.SUPABASE_URL }}
         run: |
-          mkdir backups
+          mkdir -p backups
 
-          pg_dump \
-            -h ${{ secrets.SUPABASE_HOST }} \
-            -p ${{ secrets.SUPABASE_PORT }} \
-            -U ${{ secrets.SUPABASE_USER }} \
-            -d ${{ secrets.SUPABASE_DB }} \
-            > backups/backup-$(date +%Y-%m-%d).sql
+          pg_dump "$DATABASE_URL" \
+            > backups/backup-$(date +%F).sql
 
       - name: Commit backup
         run: |
@@ -35,6 +35,6 @@ jobs:
 
           git add backups
 
-          git commit -m "Backup $(date +%Y-%m-%d)" || echo "No changes"
+          git commit -m "Backup $(date +%F)" || echo "No changes"
 
           git push
