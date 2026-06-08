@@ -1,0 +1,30 @@
+name: Restore Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Restore backup
+        env:
+          DATABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
+        run: |
+          docker run --rm \
+            -e DATABASE_URL="$DATABASE_URL" \
+            -v ${{ github.workspace }}/backups:/backups \
+            postgres:17 \
+            sh -c '
+              pg_restore \
+                --verbose \
+                --clean \
+                --if-exists \
+                --no-owner \
+                --dbname="$DATABASE_URL" \
+                /backups/$(ls /backups | sort | tail -n 1)
+            '
