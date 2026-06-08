@@ -23,10 +23,12 @@ jobs:
             postgres:17 \
             sh -c "
               gunzip -c /backups/$(basename $LATEST_BACKUP) > /tmp/backup.dump
-
               pg_restore \
+                --clean \
                 --verbose \
                 --no-owner \
+                --no-privileges \
+                --if-exists \
                 --dbname=\"\$DATABASE_URL\" \
                 /tmp/backup.dump
             "
