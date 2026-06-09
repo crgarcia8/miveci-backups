@@ -79,6 +79,6 @@ jobs:
           username: ${{ secrets.SMTP_USER }}
           password: ${{ secrets.SMTP_PASSWORD }}
           subject: 📊 Reporte Diario MiVeci
-          to: ${{ secrets.EMAIL_TO }}
+          to: crgarcia8@gmail.com
           from: MiVeci Bot
           html_body: file://reporte.html
