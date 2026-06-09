@@ -2,7 +2,8 @@ name: Reporte Diario MiVeci
 
 on:
   schedule:
-    - cron: '0 11 * * *' # 6:00 AM Bogotá
+    # 06:00 AM Bogotá (UTC-5) = 11:00 UTC
+    - cron: '0 11 * * *'
   workflow_dispatch:
 
 jobs:
@@ -15,42 +16,69 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
-      - name: Ejecutar query
+      - name: Generar reporte HTML
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_URL }}
         run: |
-          psql "$DATABASE_URL" <<'SQL' > reporte.csv
-          COPY (
-            SELECT
-                ne.evento_sesion_id,
-                u.email,
-                COUNT(*) AS eventos
-            FROM public.negocios_eventos ne
-            LEFT JOIN auth.users u
-                ON ne.evento_usuario_id = u.id
-            WHERE ne.evento_sesion_id IN (
-                SELECT evento_sesion_id
-                FROM public.negocios_eventos
-                WHERE DATE(evento_created_at) = CAST(current_date - interval '1 day' as DATE)
-                GROUP BY evento_sesion_id
-            )
-            GROUP BY ne.evento_sesion_id, u.email
-            ORDER BY ne.evento_sesion_id DESC
-          ) TO STDOUT WITH CSV HEADER;
+          cat > reporte.html << 'HTML_START'
+          <html>
+          <body style="font-family: Arial, sans-serif;">
+            <h2>📊 Reporte Diario MiVeci</h2>
+            <p>Actividad correspondiente al día anterior.</p>
+
+            <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse;">
+              <tr style="background-color: #f2f2f2;">
+                <th>Sesión</th>
+                <th>Email</th>
+                <th>Eventos</th>
+              </tr>
+          HTML_START
+
+          psql "$DATABASE_URL" -t -A -F "|" <<'SQL' > resultados.txt
+          SELECT
+              ne.evento_sesion_id,
+              COALESCE(u.email, 'Anónimo'),
+              COUNT(*) AS eventos
+          FROM public.negocios_eventos ne
+          LEFT JOIN auth.users u
+              ON ne.evento_usuario_id = u.id
+          WHERE ne.evento_sesion_id IN (
+              SELECT evento_sesion_id
+              FROM public.negocios_eventos
+              WHERE DATE(evento_created_at) = current_date - interval '1 day'
+              GROUP BY evento_sesion_id
+          )
+          GROUP BY ne.evento_sesion_id, u.email
+          ORDER BY ne.evento_sesion_id DESC;
           SQL
 
-      - name: Mostrar resultado
-        run: cat reporte.csv
+          while IFS="|" read -r sesion email eventos
+          do
+            echo "<tr><td>${sesion}</td><td>${email}</td><td>${eventos}</td></tr>" >> reporte.html
+          done < resultados.txt
+
+          cat >> reporte.html << 'HTML_END'
+            </table>
+
+            <br>
+
+            <p style="color:#666;font-size:12px;">
+              Reporte generado automáticamente por GitHub Actions.
+            </p>
+
+          </body>
+          </html>
+          HTML_END
 
       - name: Enviar correo
         uses: dawidd6/action-send-mail@v3
         with:
-          server_address: smtp.gmail.com
-          server_port: 587
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          secure: false
           username: ${{ secrets.SMTP_USER }}
           password: ${{ secrets.SMTP_PASSWORD }}
-          subject: Reporte Diario MiVeci
-          to: crgarcia8@gmail.com
+          subject: 📊 Reporte Diario MiVeci
+          to: ${{ secrets.EMAIL_TO }}
           from: MiVeci Bot
-          body: Reporte generado automáticamente.
-          attachments: reporte.csv
+          html_body: file://reporte.html
