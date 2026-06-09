@@ -1,4 +1,4 @@
-name: Backup Supabase
+name: 01-Backup Supabase
 
 on:
   workflow_dispatch:
