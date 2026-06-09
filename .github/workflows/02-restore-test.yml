@@ -1,4 +1,4 @@
-name: Restore Test
+name: 02-Restore Test
 
 on:
   workflow_dispatch:
