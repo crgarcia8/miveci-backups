@@ -2,6 +2,8 @@ name: 02-Restore Test
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 11 * * *'
 
 jobs:
   restore:
