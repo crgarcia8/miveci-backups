@@ -28,13 +28,18 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
         run: |
-          LATEST_BACKUP=$(ls backups/*.dump.gz | sort | tail -n 1)
+          LATEST_BACKUP=$(ls backups/*.dump.gz 2>/dev/null | sort | tail -n 1)
+
+          if [ -z "$LATEST_BACKUP" ]; then
+            echo "No backup found"
+            exit 1
+          fi
 
           docker run --rm \
             -v ${{ github.workspace }}/backups:/backups \
             postgres:17 \
             sh -c "
-              gunzip -c /backups/$(basename $LATEST_BACKUP) > /tmp/backup.dump
+              gunzip -c /backups/$(basename "$LATEST_BACKUP") > /tmp/backup.dump
 
               pg_restore \
                 --verbose \
@@ -43,3 +48,48 @@ jobs:
                 --dbname=\"$DATABASE_URL\" \
                 /tmp/backup.dump
             "
+
+      # 3. FIX PERMISSIONS
+      - name: Fix permissions
+        env:
+          DATABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
+        run: |
+          docker run --rm \
+            postgres:17 \
+            psql "$DATABASE_URL" <<'SQL'
+
+          -- Permisos de schema
+          GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+
+          -- Tablas existentes
+          GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, service_role;
+          GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated;
+
+          -- Secuencias existentes
+          GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, service_role;
+          GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+
+          -- Funciones existentes
+          GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO postgres, service_role;
+          GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated;
+
+          -- Objetos futuros creados por postgres
+          ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+            GRANT ALL ON TABLES TO postgres, service_role;
+
+          ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+            GRANT SELECT ON TABLES TO anon, authenticated;
+
+          ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+            GRANT ALL ON SEQUENCES TO postgres, service_role;
+
+          ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+            GRANT USAGE ON SEQUENCES TO anon, authenticated;
+
+          ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+            GRANT ALL ON FUNCTIONS TO postgres, service_role;
+
+          ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+            GRANT EXECUTE ON FUNCTIONS TO anon, authenticated;
+
+          SQL
