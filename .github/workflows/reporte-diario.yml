@@ -45,7 +45,7 @@ jobs:
           WHERE ne.evento_sesion_id IN (
               SELECT evento_sesion_id
               FROM public.negocios_eventos
-              WHERE DATE(evento_created_at) = current_date - interval '1 day'
+              WHERE DATE(evento_created_at) = current_date
               GROUP BY evento_sesion_id
           )
           GROUP BY ne.evento_sesion_id, u.email
