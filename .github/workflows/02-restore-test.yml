@@ -21,7 +21,7 @@ jobs:
           docker run --rm \
             postgres:17 \
             psql "$DATABASE_URL" \
-            -c "drop schema public cascade; create schema public;"
+            -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public; CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public;"
 
       # 2. RESTORE BACKUP
       - name: Restore backup
