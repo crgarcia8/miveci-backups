@@ -37,19 +37,18 @@ jobs:
           psql "$DATABASE_URL" -t -A -F "|" <<'SQL' > resultados.txt
           SELECT
               ne.evento_sesion_id,
-              COALESCE(u.email, 'Anónimo'),
+              COALESCE(u.email, 'Anónimo') AS email,
               COUNT(*) AS eventos
           FROM public.negocios_eventos ne
           LEFT JOIN auth.users u
               ON ne.evento_usuario_id = u.id
-          WHERE ne.evento_sesion_id IN (
-              SELECT evento_sesion_id
-              FROM public.negocios_eventos
-              WHERE DATE(evento_created_at) = current_date
-              GROUP BY evento_sesion_id
-          )
-          GROUP BY ne.evento_sesion_id, u.email
-          ORDER BY ne.evento_sesion_id DESC;
+          WHERE (ne.evento_created_at AT TIME ZONE 'America/Bogota')::date =
+                (NOW() AT TIME ZONE 'America/Bogota')::date
+          GROUP BY
+              ne.evento_sesion_id,
+              u.email
+          ORDER BY
+              ne.evento_sesion_id DESC;;
           SQL
 
           while IFS="|" read -r sesion email eventos
