@@ -44,7 +44,7 @@ jobs:
                 --verbose \
                 --no-owner \
                 --no-privileges \
-                --disable-triggers
+                --disable-triggers \
                 --schema=public \
                 --dbname=\"$DATABASE_URL\" \
                 /tmp/backup.dump
