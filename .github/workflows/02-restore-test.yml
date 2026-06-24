@@ -21,8 +21,7 @@ jobs:
           docker run --rm \
             postgres:17 \
             psql "$DATABASE_URL" \
-            -c "CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public;"
-
+            -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public; CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public;"
       # 2. RESTORE BACKUP
       - name: Restore backup
         env:
@@ -43,10 +42,9 @@ jobs:
 
               pg_restore \
                 --verbose \
-                --clean \
-                --if-exists \
                 --no-owner \
                 --no-privileges \
+                --schema=public \
                 --dbname=\"$DATABASE_URL\" \
                 /tmp/backup.dump
             "
