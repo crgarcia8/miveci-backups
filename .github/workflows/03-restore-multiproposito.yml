@@ -1,0 +1,90 @@
+name: 03-Restore Neon Test
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 11 * * *'
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Find latest Neon backup
+        id: backup
+        run: |
+          BACKUP=$(ls backups/neon-backup-*.dump.gz 2>/dev/null | sort | tail -n 1)
+
+          if [ -z "$BACKUP" ]; then
+            echo "No Neon backup found."
+            exit 1
+          fi
+
+          echo "backup=$(basename "$BACKUP")" >> "$GITHUB_OUTPUT"
+
+      - name: Clean destination database
+        env:
+          DATABASE_URL: ${{ secrets.TEST_NEON_DATABASE_URL }}
+        run: |
+          docker run --rm \
+            -e DATABASE_URL="$DATABASE_URL" \
+            postgres:17 \
+            sh -c '
+              psql "$DATABASE_URL" <<EOF
+              DROP SCHEMA IF EXISTS auth CASCADE;
+              DROP SCHEMA IF EXISTS public CASCADE;
+
+              CREATE SCHEMA public;
+              CREATE SCHEMA auth;
+              EOF
+            '
+
+      - name: Restore backup
+        env:
+          DATABASE_URL: ${{ secrets.TEST_NEON_DATABASE_URL }}
+        run: |
+          docker run --rm \
+            -e DATABASE_URL="$DATABASE_URL" \
+            -v ${{ github.workspace }}/backups:/backups \
+            postgres:17 \
+            sh -c '
+              gunzip -c /backups/${{ steps.backup.outputs.backup }} > /tmp/backup.dump
+
+              pg_restore \
+                --verbose \
+                --clean \
+                --if-exists \
+                --no-owner \
+                --no-privileges \
+                --exit-on-error \
+                --dbname="$DATABASE_URL" \
+                /tmp/backup.dump
+            '
+
+      - name: Verify restore
+        env:
+          DATABASE_URL: ${{ secrets.TEST_NEON_DATABASE_URL }}
+        run: |
+          docker run --rm \
+            -e DATABASE_URL="$DATABASE_URL" \
+            postgres:17 \
+            psql "$DATABASE_URL" \
+            -c "\dn"
+
+      - name: List restored tables
+        env:
+          DATABASE_URL: ${{ secrets.TEST_NEON_DATABASE_URL }}
+        run: |
+          docker run --rm \
+            -e DATABASE_URL="$DATABASE_URL" \
+            postgres:17 \
+            psql "$DATABASE_URL" \
+            -c "
+              SELECT schemaname, tablename
+              FROM pg_tables
+              WHERE schemaname IN ('public', 'auth')
+              ORDER BY schemaname, tablename;
+            "
