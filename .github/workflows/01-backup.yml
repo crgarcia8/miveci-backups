@@ -44,7 +44,7 @@ jobs:
           docker run --rm \
             -e DATABASE_URL="$DATABASE_URL" \
             -v ${{ github.workspace }}/backups:/backups \
-            postgres:17 \
+            postgres:18 \
             sh -c 'pg_dump "$DATABASE_URL" \
               -F c \
               --schema=public \
