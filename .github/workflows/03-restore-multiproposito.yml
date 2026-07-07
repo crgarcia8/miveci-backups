@@ -30,8 +30,10 @@ jobs:
           DATABASE_URL: ${{ secrets.TEST_NEON_DATABASE_URL }}
         run: |
           docker run --rm \
+            --entrypoint psql \
             -e DATABASE_URL="$DATABASE_URL" \
             postgres:18 \
+            "$DATABASE_URL" \
             -v ON_ERROR_STOP=1 \
             -c "
               DROP SCHEMA IF EXISTS auth CASCADE;
