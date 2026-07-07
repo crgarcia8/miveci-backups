@@ -32,15 +32,13 @@ jobs:
           docker run --rm \
             -e DATABASE_URL="$DATABASE_URL" \
             postgres:18 \
-            sh -c '
-              psql "$DATABASE_URL" <<EOF
+            -v ON_ERROR_STOP=1 \
+            -c "
               DROP SCHEMA IF EXISTS auth CASCADE;
               DROP SCHEMA IF EXISTS public CASCADE;
-
               CREATE SCHEMA public;
               CREATE SCHEMA auth;
-              EOF
-            '
+            "
 
       - name: Restore backup
         env:
