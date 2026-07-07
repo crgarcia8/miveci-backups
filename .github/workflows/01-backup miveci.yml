@@ -1,4 +1,4 @@
-name: 01-Backup Databases
+name: 01-Backup Database miveci
 
 on:
   workflow_dispatch:
@@ -33,25 +33,6 @@ jobs:
               --no-owner \
               --no-privileges \
             | gzip > /backups/supabase-backup-$(date +%F).dump.gz'
-
-      # -----------------------------
-      # Backup Neon
-      # -----------------------------
-      - name: Backup Neon
-        env:
-          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
-        run: |
-          docker run --rm \
-            -e DATABASE_URL="$DATABASE_URL" \
-            -v ${{ github.workspace }}/backups:/backups \
-            postgres:18 \
-            sh -c 'pg_dump "$DATABASE_URL" \
-              -F c \
-              --schema=public \
-              --schema=auth \
-              --no-owner \
-              --no-privileges \
-            | gzip > /backups/neon-backup-$(date +%F).dump.gz'
 
       - name: Verify backups
         run: |
