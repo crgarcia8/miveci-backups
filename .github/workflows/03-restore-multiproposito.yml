@@ -38,8 +38,10 @@ jobs:
             -c "
               DROP SCHEMA IF EXISTS auth CASCADE;
               DROP SCHEMA IF EXISTS public CASCADE;
+              DROP SCHEMA IF EXISTS config CASCADE;
               CREATE SCHEMA public;
               CREATE SCHEMA auth;
+              CREATE SCHEMA config;
             "
 
       - name: Restore backup
