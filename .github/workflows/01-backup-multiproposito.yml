@@ -29,8 +29,6 @@ jobs:
             postgres:18 \
             sh -c 'pg_dump "$DATABASE_URL" \
               -F c \
-              --schema=public \
-              --schema=auth \
               --no-owner \
               --no-privileges \
             | gzip > /backups/neon-backup-$(date +%F).dump.gz'
