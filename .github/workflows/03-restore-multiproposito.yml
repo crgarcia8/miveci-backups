@@ -39,9 +39,13 @@ jobs:
               DROP SCHEMA IF EXISTS auth CASCADE;
               DROP SCHEMA IF EXISTS public CASCADE;
               DROP SCHEMA IF EXISTS config CASCADE;
+              DROP SCHEMA IF EXISTS fit_club CASCADE;
+              DROP SCHEMA IF EXISTS retos CASCADE;              
               CREATE SCHEMA public;
               CREATE SCHEMA auth;
               CREATE SCHEMA config;
+              CREATE SCHEMA fit_club;
+              CREATE SCHEMA retos;
             "
 
       - name: Restore backup
@@ -95,6 +99,6 @@ jobs:
             -c "
               SELECT schemaname, tablename
               FROM pg_tables
-              WHERE schemaname IN ('public', 'auth')
+              WHERE schemaname IN ('public', 'auth','config','fit_club','legal','retos')
               ORDER BY schemaname, tablename;
             "
