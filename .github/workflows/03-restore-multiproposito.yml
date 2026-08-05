@@ -40,11 +40,13 @@ jobs:
               DROP SCHEMA IF EXISTS public CASCADE;
               DROP SCHEMA IF EXISTS config CASCADE;
               DROP SCHEMA IF EXISTS fit_club CASCADE;
+              DROP SCHEMA IF EXISTS legal CASCADE;
               DROP SCHEMA IF EXISTS retos CASCADE;              
               CREATE SCHEMA public;
               CREATE SCHEMA auth;
               CREATE SCHEMA config;
               CREATE SCHEMA fit_club;
+              CREATE SCHEMA legal;
               CREATE SCHEMA retos;
             "
 
