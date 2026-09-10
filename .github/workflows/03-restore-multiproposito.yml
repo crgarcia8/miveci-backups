@@ -38,6 +38,8 @@ jobs:
             -c "
               DROP SCHEMA IF EXISTS auth CASCADE;
               DROP SCHEMA IF EXISTS public CASCADE;
+              DROP SCHEMA IF EXISTS bienestar CASCADE;
+              DROP SCHEMA IF EXISTS pagos CASCADE;
               DROP SCHEMA IF EXISTS config CASCADE;
               DROP SCHEMA IF EXISTS fit_club CASCADE;
               DROP SCHEMA IF EXISTS legal CASCADE;
@@ -48,6 +50,8 @@ jobs:
               CREATE SCHEMA fit_club;
               CREATE SCHEMA legal;
               CREATE SCHEMA retos;
+              CREATE SCHEMA bienestar;
+              CREATE SCHEMA pagos;
             "
 
       - name: Restore backup
