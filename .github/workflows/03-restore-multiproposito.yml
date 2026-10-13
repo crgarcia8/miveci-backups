@@ -43,7 +43,8 @@ jobs:
               DROP SCHEMA IF EXISTS config CASCADE;
               DROP SCHEMA IF EXISTS fit_club CASCADE;
               DROP SCHEMA IF EXISTS legal CASCADE;
-              DROP SCHEMA IF EXISTS retos CASCADE;              
+              DROP SCHEMA IF EXISTS retos CASCADE;    
+              DROP SCHEMA IF EXISTS movil CASCADE;
               CREATE SCHEMA public;
               CREATE SCHEMA auth;
               CREATE SCHEMA config;
@@ -52,6 +53,7 @@ jobs:
               CREATE SCHEMA retos;
               CREATE SCHEMA bienestar;
               CREATE SCHEMA pagos;
+              CREATE SCHEMA movil;
             "
 
       - name: Restore backup
