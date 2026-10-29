@@ -1,4 +1,4 @@
-name: 01-Backup Database miveci
+name: 00-Backup Database miveci
 
 on:
   workflow_dispatch:
